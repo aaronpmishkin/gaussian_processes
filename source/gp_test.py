@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 21:31:56
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-01 16:49:28
+# @Last Modified time: 2017-08-03 12:51:36
 
 
 import numpy as np
@@ -44,7 +44,7 @@ print('GPy Likelihood: ', gp_GPy.log_likelihood(), gp_GPy.objective_function_gra
 
 gp_GPy.plot()
 
-theta, op_likelihood = gp.optimize()
+theta, op_likelihood = gp.optimize(fixed_params=[0])
 gp.set_hyperparameters(theta)
 print(theta, op_likelihood)
 

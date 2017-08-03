@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 16:07:12
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-01 16:49:48
+# @Last Modified time: 2017-08-03 14:43:37
 
 # Implementation adapted from Gaussian Processes for Machine Learning; Rasmussen and Williams, 2006
 
@@ -46,14 +46,28 @@ class GaussianProcess():
         self.kernel = kernel
         self.mean_function = mean_function
         self.mu = mean_function(X)
-        self.obs_variance = obs_variance
+
+        self.theta = np.array([obs_variance, self.kernel.length_scale, self.kernel.var])
 
         self.K = kernel.cov(X) + (obs_variance * np.identity(X.shape[0]))
 
     def get_hyperparameters(self):
-        return np.append(np.array([self.obs_variance]), self.kernel.get_hyperparameters())
+        """ get_hyperparameters
+        Get the hyperparameters of the Gaussian process model.
+        """
+
+        return self.theta
 
     def set_hyperparameters(self, theta):
+        """ get_hyperparameters
+        Set the hyperparameters of the Gaussian process model.
+        Includes the hyperparameters of the kernel function.
+        Arguments:
+        ----------
+            Theta: array-like, shape = [n_hyperparameters, ]
+                The new hyperparameters of the GP model. Must include kernel parameters.
+        """
+        self.theta = theta
         self.obs_variance = theta[0]
         self.kernel.set_hyperparameters(theta[1:])
         self.K = self.kernel.cov(self.X) + (self.obs_variance * np.identity(self.X.shape[0]))
@@ -113,11 +127,15 @@ class GaussianProcess():
     def log_likelihood(self, theta=None):
         """ log_likelihood
         Compute the log of the marginal likelihood given the training inputs and targets.
+        Arguments:
+        ---------
+            theta: array-like, shape = [n_hyperparameters, ]
+                The hyperparameter assignment at which to evaluate the log marginal likelihood.
         """
         I_matrix = np.identity(self.X.shape[0])
 
         if theta is None:
-            theta = np.array([self.obs_variance, self.kernel.length_scale, self.kernel.var])
+            self.theta
             K = self.K
         else:
             K = self.kernel.cov(self.X, theta=theta[1:]) + (theta[0] * I_matrix)
@@ -137,10 +155,16 @@ class GaussianProcess():
         return (fit_term + complexity_term + normalizing_term).sum()
 
     def log_likelihood_gradient(self, theta=None):
-        # The first element of the hyperparameter vector is the observation variance.
-
+        """ log_likelihood_gradient
+        Compute the gradient of log of the marginal likelihood
+        with respect to the model hyperparameters.
+        Arguments:
+        ---------
+            theta: array-like, shape = [n_hyperparameters, ]
+                The hyperparameter assignment at which to evaluate the gradient.
+        """
         if theta is None:
-            theta = np.array([self.obs_variance, self.kernel.length_scale, self.kernel.var])
+            theta = self.theta
 
         I_matrix = np.identity(self.X.shape[0])
         grad = np.copy(theta)
@@ -162,34 +186,91 @@ class GaussianProcess():
 
         return grad
 
-    def __objective__(self, theta=None):
+    def __objective__(self, theta=None, fixed_params=[]):
+        """ __objective__
+        Compute the negative log of the marginal likelihood given the training inputs and targets.
+        This is the objective function used to optimize the hyperparameters of the GP model.
+        Arguments:
+        ---------
+            theta: array-like, shape = [n_params, ]
+                The (partial) hyperparameter assignment at which to evaluate the
+                log marginal likelihood. The assignment is missing those hyperparams
+                that are fixed in the optimization (see fixed_params).
+            fixed_params: array-like, shape = [n_fixed_params, ], n_fixed_params <= n_hyperparams
+                The indices of the hyperparameters in the hyperparameter array (theta)
+                to consider fixed during optimization.
+        """
+        theta = np.insert(theta, fixed_params, self.theta[fixed_params])
         return -1 * self.log_likelihood(theta)
 
-    def __objective_grad__(self, theta=None):
-        return -1 * self.log_likelihood_gradient(theta)
+    def __objective_grad__(self, theta=None, fixed_params=[]):
+        """ __objective_grad__
+        Compute the negative gradient of the likelihood given the training inputs and targets.
+        This is the gradient function used to optimize the hyperparameters of the GP model.
+        Arguments:
+        ---------
+            theta: array-like, shape = [n_params, ]
+                The (partial) hyperparameter assignment at which to evaluate the
+                log marginal likelihood. The assignment is missing those hyperparams
+                that are fixed in the optimization (see fixed_params).
+            fixed_params: array-like, shape = [n_fixed_params, ], n_fixed_params <= n_hyperparams
+                The indices of the hyperparameters in the hyperparameter array (theta)
+                to consider fixed during optimization.
+        """
+        theta = np.insert(theta, fixed_params, self.theta[fixed_params])
+        grad = -1 * self.log_likelihood_gradient(theta)
 
-    def optimize(self, n_restarts=10):
+        return np.delete(grad, fixed_params)
+
+    def optimize(self, bounds=None, n_restarts=10, fixed_params=[]):
+        """ optimize
+        Optimize the hyperparameters of the GP model using the marginal log likelihood.
+        Arguments:
+        ---------
+            bounds: array-like, shape = [2, n_hyperparameters]
+                The bounds to optimize the hyperparameters within.
+                The first row contains lower bounds; the second upper bounds.
+            n_restarts: integer
+                The number of random restarts to perform during optimization.
+            fixed_params: array-like, shape = [n_fixed_params, ], n_fixed_params <= n_hyperparams
+                The indices of the hyperparameters in the hyperparameter array (theta)
+                to consider fixed during optimization.
+        """
         best_theta = None
         min_objective = np.inf
 
-        for start in np.random.uniform(np.array([0, 0, 0]),
-                                       np.array([10, 10, 10]),
-                                       size=(n_restarts, 3)):
+        if bounds is None:
+            bounds = np.array([[1e-8, 1e-8, 1e-8], [10, 10, 10]])
+
+        if len(fixed_params) != 0:
+            bounds = np.delete(bounds, fixed_params, axis=1)
+
+        for start in np.random.uniform(bounds[0, :], bounds[1, :],
+                                       size=(n_restarts, bounds.shape[1])):
 
             res = minimize(self.__objective__,
                            x0=start,
                            method="L-BFGS-B",
                            jac=self.__objective_grad__,
-                           bounds=np.array([(1e-8, None), (1e-8, None), (0, None)])
-                           )
+                           bounds=list(zip(bounds[0], bounds[1])),
+                           args=fixed_params)
 
             if res.fun < min_objective:
                 min_objective = res.fun
                 best_theta = res.x
 
+        best_theta = np.insert(best_theta, fixed_params, self.theta[fixed_params])
+
         return best_theta, -1 * min_objective
 
     def plot(self, show_data=True):
+        """ plot
+        Plot the GP model's mean function and variance.
+        Arguments:
+        ----------
+            show_data: boolean.
+                Whether or not to display the training inputs X in the plot.
+        """
         if self.X.shape[1] != 1:
             raise ValueError('Cannot plot with multi-dimensional inputs')
 
