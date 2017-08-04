@@ -2,12 +2,10 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 21:07:21
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-04 14:48:47
+# @Last Modified time: 2017-08-04 15:46:11
 
 import numpy as np
 from scipy.spatial.distance import cdist
-
-# k(x_i, x_j) = exp(-1 / 2 ||x_i - x_j|| / l)^2)
 
 
 class RBF():
@@ -30,9 +28,20 @@ class RBF():
         self.num_parameters = 2
 
     def get_parameters(self):
+        """ get_parameters
+        Get the kernel's parameters.
+        """
         return np.array([self.length_scale, self.var])
 
     def set_parameters(self, theta):
+        """ set_parameters
+        Set the kernel's parameters.
+        Arguments:
+        ----------
+            theta: array-like, shape = [2, ]
+                An array containing the new parameters of the kernel.
+                The parameter order is [length_scale, variance]
+        """
         self.length_scale = theta[0]
         self.var = theta[1]
 
@@ -47,7 +56,7 @@ class RBF():
                 A second array of inputs.
                 If Y is None, then the covariance matrix of X with itself will be computed.
             theta (optional): array-like, shape = [2, ]
-                An array of hyperparameter values for the kernel.
+                An array of parameter values for the kernel.
         """
         if Y is None:
             Y = X
@@ -64,14 +73,14 @@ class RBF():
 
     def cov_gradient(self, X, theta=None):
         """ cov_gradient
-        Compute the gradient of the covariance matrix of X with respect to the hyperparameters
+        Compute the gradient of the covariance matrix of X with respect to the parameters
         of the RBF kernel.
         Arguments:
         ----------
             X: array-like, shape = [n_samples, n_features]
                 An array of inputs.
             theta (optional): array-like, shape = [2, ]
-                An array of hyperparameter values for the kernel.
+                An array of parameter values for the kernel.
         """
 
         if theta is None:
@@ -118,6 +127,9 @@ class Additive():
         self.num_parameters = len(self.theta)
 
     def get_parameters(self):
+        """ get_parameters
+        Get the kernel's parameters, which include the parameters of the base kernels.
+        """
         theta = np.copy(self.var)
 
         for kernel in self.base_kernels:
@@ -126,6 +138,15 @@ class Additive():
         return theta
 
     def set_parameters(self, theta):
+        """ set_parameters
+        Set the kernel's parameters. This must include the parameters of the base kernels.
+        Arguments:
+        ----------
+            theta: array-like, shape = [n_parameter, ]
+                An array containing the new parameters of the kernel.
+                The first |self.order| elements must be the interaction variance parameters.
+                The remaining elements must be parameters for the base kernels.
+        """
         self.var = theta[0:self.order]
         param_index = self.order
 
@@ -134,6 +155,28 @@ class Additive():
             param_index += kernel.num_parameters
 
     def __cov__(self, X, Y=None, order=None, theta=None, base_kernels=None):
+        """ __cov__
+        Compute the covariance matrix of inputs X and Y. Returns both the covariance matrix
+        and a list of covariance matrices for each order of interaction.
+        This is an internal helper. To obtain the just covariance matrix of X (and Y), call "cov"
+        instead.
+        Arguments:
+        ----------
+            X: array-like, shape = [n_samples, n_features]
+                An array of inputs.
+            Y (optional): array-like, shape = [m_samples, n_features]
+                A second array of inputs.
+            theta: array-like, shape = [n_parameter, ]
+                The kernel parameters to use when computing the covariance.
+                If None, the current parameters of the kernel are used.
+            order: integer
+                The interaction order that will be used.
+                If None, the current kernel setting will be used.
+            base_kernels: array-like, shape = [n_features, ]
+                The list of base_kernels, one for each feature.
+                Exactly one base_kernel must be provided per input feature.
+                If None, the current base_kernels of the kernel are used.
+        """
         if Y is None:
             Y = X
 
@@ -179,11 +222,41 @@ class Additive():
         return np.sum(K[1:], axis=0), K[1:]
 
     def cov(self, X, Y=None, order=None, theta=None, base_kernels=None):
+        """ cov
+        Compute the covariance matrix of inputs X and Y using __cov__.
+        Arguments:
+        ----------
+            X: array-like, shape = [n_samples, n_features]
+                An array of inputs.
+            Y (optional): array-like, shape = [m_samples, n_features]
+                A second array of inputs.
+            theta: array-like, shape = [n_parameter, ]
+                The kernel parameters to use when computing the covariance.
+                If None, the current parameters of the kernel are used.
+            order: integer
+                The interaction order that will be used.
+                If None, the current kernel setting will be used.
+            base_kernels: array-like, shape = [X.shape[0], ]
+                The base_kernels to use for each feature.
+                Exactly one base_kernel must be provided per input feature.
+                If None, the current base_kernels of the kernel are used.
+        """
         K, K_orders = self.__cov__(X, Y, order, theta, base_kernels)
 
         return K
 
     def cov_gradient(self, X, theta=None):
+        """ cov_gradient
+        Compute the gradient of the covariance matrix of X with respect to the parameters
+        of the additive kernel and the base kernels.
+        Arguments:
+        ----------
+            X: array-like, shape = [n_samples, n_features]
+                An array of inputs.
+            theta: array-like, shape = [n_parameter, ]
+                The kernel parameters to use when computing the covariance.
+                If None, the current parameters of the kernel are used.
+        """
         if theta is None:
             theta = self.theta
 

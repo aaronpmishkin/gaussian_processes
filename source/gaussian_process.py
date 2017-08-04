@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 16:07:12
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-04 14:51:15
+# @Last Modified time: 2017-08-04 16:00:52
 
 # Implementation adapted from Gaussian Processes for Machine Learning; Rasmussen and Williams, 2006
 
@@ -37,7 +37,7 @@ class GaussianProcess():
             The variance of the gaussian noise in the targets.
     """
 
-    def __init__(self, X, Y, kernel, mean_function=mean_functions.zero_mean, obs_variance=1):
+    def __init__(self, X, Y, kernel, mean_function=mean_functions.Zero(), obs_variance=1):
         self.__plot_density__ = 200
         self.__plot_delta__ = 0.2
 
@@ -45,7 +45,7 @@ class GaussianProcess():
         self.Y = Y
         self.kernel = kernel
         self.mean_function = mean_function
-        self.mu = mean_function(X)
+        self.mu = mean_function.f(X)
 
         self.theta = np.append([obs_variance], self.kernel.get_parameters())
         self.K = kernel.cov(X) + (obs_variance * np.identity(X.shape[0]))
@@ -85,7 +85,7 @@ class GaussianProcess():
 
         alpha = solve_triangular(L, (self.Y - self.mu), lower=True)
         alpha = solve_triangular(L.T, alpha, lower=False)
-        f_bar = self.mean_function(X_star) + np.dot(K_star, alpha)
+        f_bar = self.mean_function.f(X_star) + np.dot(K_star, alpha)
 
         v = solve_triangular(L, K_star.T, lower=True)
         cov = self.kernel.cov(X_star) - np.dot(v.T, v)
