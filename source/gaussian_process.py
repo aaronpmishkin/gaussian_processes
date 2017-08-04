@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 16:07:12
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-03 14:43:37
+# @Last Modified time: 2017-08-04 13:46:50
 
 # Implementation adapted from Gaussian Processes for Machine Learning; Rasmussen and Williams, 2006
 
@@ -26,7 +26,7 @@ class GaussianProcess():
     ----------
         X: array-like, shape = [n_samples, n_features]
             The inputs to the Gaussian Process
-        y: array-like, shape = [n_samples, 1]
+        Y: array-like, shape = [n_samples, 1]
             The targets for the Gaussian Process
         kernel:
             The kernel function for the Gaussian Process.
@@ -47,8 +47,7 @@ class GaussianProcess():
         self.mean_function = mean_function
         self.mu = mean_function(X)
 
-        self.theta = np.array([obs_variance, self.kernel.length_scale, self.kernel.var])
-
+        self.theta = np.append([obs_variance], self.kernel.get_parameters())
         self.K = kernel.cov(X) + (obs_variance * np.identity(X.shape[0]))
 
     def get_hyperparameters(self):
@@ -61,16 +60,15 @@ class GaussianProcess():
     def set_hyperparameters(self, theta):
         """ get_hyperparameters
         Set the hyperparameters of the Gaussian process model.
-        Includes the hyperparameters of the kernel function.
+        Includes the arameters of the kernel function.
         Arguments:
         ----------
             Theta: array-like, shape = [n_hyperparameters, ]
                 The new hyperparameters of the GP model. Must include kernel parameters.
         """
         self.theta = theta
-        self.obs_variance = theta[0]
-        self.kernel.set_hyperparameters(theta[1:])
-        self.K = self.kernel.cov(self.X) + (self.obs_variance * np.identity(self.X.shape[0]))
+        self.kernel.set_parameters(theta[1:])
+        self.K = self.kernel.cov(self.X) + (theta[0] * np.identity(self.X.shape[0]))
 
     def predict(self, X_star, noise=True):
         """ predict
@@ -93,7 +91,7 @@ class GaussianProcess():
         cov = self.kernel.cov(X_star) - np.dot(v.T, v)
 
         if noise:
-            cov += self.obs_variance * np.identity(cov.shape[0])
+            cov += self.theta[0] * np.identity(cov.shape[0])
 
         return f_bar, cov  # Return the mean and covariance matrix for X_star
 
@@ -239,8 +237,10 @@ class GaussianProcess():
         best_theta = None
         min_objective = np.inf
 
+        ones = np.ones(self.kernel.num_parameters + 1)
+
         if bounds is None:
-            bounds = np.array([[1e-8, 1e-8, 1e-8], [10, 10, 10]])
+            bounds = np.array([(ones * 1e-8), (ones * 10)])
 
         if len(fixed_params) != 0:
             bounds = np.delete(bounds, fixed_params, axis=1)
@@ -280,7 +280,7 @@ class GaussianProcess():
 
         mean_x = np.linspace(np.floor(minVal - delta),
                              np.ceil(maxVal + delta),
-                             self.__plot_density__).reshape(self.__plot_density__, 1)
+                             self.__plot_density__).reshape(self.__plot_density__, self.kernel.dim)
 
         mean_y, cov = self.predict(mean_x)
         lq, uq = self.predict_quantiles(mean_x, noise=True)

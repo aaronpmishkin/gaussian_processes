@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 21:07:21
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-01 16:49:48
+# @Last Modified time: 2017-08-04 12:44:28
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -15,20 +15,24 @@ class RBF():
     Implementation of the radial basis function kernel. Also called the squared exponential kernel.
     Arguments:
     ----------
+        dim: integer
+            The dimensionality of inputs to the kernel (i.e. dimension of X).
         length_scale: number
             The length scale of the kernel function.
         var: number
             The variance magnitude of the kernel function.
     """
 
-    def __init__(self, length_scale=1, var=1):
+    def __init__(self, dim, length_scale=1, var=1):
+        self.dim = dim
         self.length_scale = length_scale
         self.var = var
+        self.num_parameters = 2
 
-    def get_hyperparameters(self):
+    def get_parameters(self):
         return np.array([self.length_scale, self.var])
 
-    def set_hyperparameters(self, theta):
+    def set_parameters(self, theta):
         self.length_scale = theta[0]
         self.var = theta[1]
 
@@ -82,5 +86,129 @@ class RBF():
         dK_dvar = K
 
         return np.array([dK_dl, dK_dvar])
+
+
+class Additive():
+    """ RBF
+    Implementation of the additive kernel as described by Duvenaud et al, 2011
+    Arguments:
+    ----------
+        dim: integer,
+            The dimensionality of inputs to the kernel (i.e. dimension of X).
+        order: number, order <= dim
+            The order of the additive kernel.
+        var: array-like, shape = [order, ]
+            An array of variance magnitudes, one for each order d: 1 <= d <= D
+    """
+    def __init__(self, dim, order, base_kernels, var=None):
+        if order > dim:
+            raise ValueError('Kernel order cannot be larger than input dimension')
+
+        if dim != len(base_kernels):
+            raise ValueError('A base kernel must be provided for each input dimension')
+
+        if var is None:
+            var = np.ones(dim)
+
+        self.dim = dim
+        self.order = order
+        self.base_kernels = base_kernels
+        self.var = var
+        self.theta = self.get_parameters()
+        self.num_parameters = len(self.theta)
+
+    def get_parameters(self):
+        theta = np.copy(self.var)
+
+        for kernel in self.base_kernels:
+            theta = np.append(theta, kernel.get_parameters())
+
+        return theta
+
+    def set_parameters(self, theta):
+        self.var = theta[0:self.order]
+        param_index = self.order
+
+        for kernel in self.base_kernels:
+            kernel.set_parameters(theta[param_index:kernel.num_parameters + kernel.num_parameters])
+            param_index += kernel.num_parameters
+
+    def __cov__(self, X, Y=None, order=None, theta=None, base_kernels=None):
+        if Y is None:
+            Y = X
+
+        if theta is None:
+            theta = self.theta
+
+        if order is None:
+            order = self.order
+
+        if base_kernels is None:
+            base_kernels = self.base_kernels
+
+        # Z is the array of covariance matrices produced by application of the base kernels.
+        Z = np.ones((len(base_kernels), X.shape[0], Y.shape[0]))
+        # S is the array of of k^th power sums of the matrices in Z, k = 1 ... self.order
+        S = np.ones((order + 1, X.shape[0], Y.shape[0]))
+        # K is the array of k^th order additive kernels, k = 1 ... order
+        K = np.zeros((order + 1, X.shape[0], Y.shape[0]))
+        K[0] = 1
+
+        p_index = len(base_kernels)
+        for i, kernel in enumerate(base_kernels):
+            params = theta[p_index:p_index + kernel.num_parameters]
+            p_index += kernel.num_parameters
+            Z[i] = kernel.cov(X[:, i].reshape(X.shape[0], 1),
+                              Y[:, i].reshape(Y.shape[0], 1),
+                              theta=params)
+
+        Z_d = np.copy(Z)
+        for d in range(1, order + 1):
+            S[d] = np.sum(Z_d, axis=0)
+            Z_d = Z_d * Z_d
+
+        for d in range(1, order + 1):
+            for j in range(1, d + 1):
+                K[d] += ((-1) ** (j - 1)) * K[d - j] * S[j]
+
+            K[d] = K[d] / d
+
+        for d in range(1, order + 1):
+            K[d] = theta[d - 1] * K[d]
+
+        return np.sum(K[1:], axis=0), K[1:]
+
+    def cov(self, X, Y=None, order=None, theta=None, base_kernels=None):
+        K, K_orders = self.__cov__(X, Y, order, theta, base_kernels)
+
+        return K
+
+    def cov_gradient(self, X, theta=None):
+        if theta is None:
+            theta = self.theta
+
+        gradient = []
+        p_index = self.dim
+
+        K, K_orders = self.__cov__(X, theta=theta)
+
+        for i in range(self.order):
+            gradient.append(K_orders[i])
+
+        for i, ki in enumerate(self.base_kernels):
+            dK_dki = self.cov(np.delete(X, i, axis=1),
+                              order=(self.order - 1),
+                              base_kernels=np.delete(self.base_kernels, i))
+
+            dki_dtheta = ki.cov_gradient(X, theta[p_index: p_index + ki.num_parameters])
+
+            gradient.extend((dK_dki + 1) * dki_dtheta)
+
+        return np.array(gradient)
+
+
+
+
+
 
 
