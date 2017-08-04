@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 21:07:21
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-04 12:44:28
+# @Last Modified time: 2017-08-04 14:48:47
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -130,7 +130,7 @@ class Additive():
         param_index = self.order
 
         for kernel in self.base_kernels:
-            kernel.set_parameters(theta[param_index:kernel.num_parameters + kernel.num_parameters])
+            kernel.set_parameters(theta[param_index:param_index + kernel.num_parameters])
             param_index += kernel.num_parameters
 
     def __cov__(self, X, Y=None, order=None, theta=None, base_kernels=None):
