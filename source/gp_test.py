@@ -2,14 +2,14 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 21:31:56
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-04 14:51:35
+# @Last Modified time: 2017-08-04 16:40:35
 
 import numpy as np
 import matplotlib.pyplot as plt
 import GPy
 import gaussian_process
 import kernels
-import mean_functions
+import bayesian_optimization
 
 X = np.random.uniform(low=[0, 0], high=[10, 10], size=(5, 2))
 
@@ -22,7 +22,7 @@ base_kernel_0 = kernels.RBF(dim=1, length_scale=1, var=1)
 base_kernel_1 = kernels.RBF(dim=1, length_scale=1, var=1)
 
 additive_kernel = kernels.Additive(dim=2, order=2, base_kernels=[base_kernel_0, base_kernel_1])
-gp_additive = gaussian_process.GaussianProcess(X, Y, additive_kernel, mean_functions.zero_mean, obs_variance=1)
+gp_additive = gaussian_process.GaussianProcess(X, Y, additive_kernel, obs_variance=1)
 
 likelihood = gp_additive.log_likelihood(np.array([1, 1, 1, 1, 1, 1, 1]))
 grad_likelihood = gp_additive.log_likelihood_gradient(np.array([1, 1, 1, 1, 1, 1, 1]))
@@ -30,7 +30,7 @@ grad_likelihood = gp_additive.log_likelihood_gradient(np.array([1, 1, 1, 1, 1, 1
 print('GP Additive Likelihood:', likelihood, grad_likelihood)
 
 rbf_kernel = kernels.RBF(dim=1, length_scale=1, var=1)
-gp = gaussian_process.GaussianProcess(X, Y, rbf_kernel, mean_functions.zero_mean, obs_variance=1)
+gp = gaussian_process.GaussianProcess(X, Y, rbf_kernel, obs_variance=1)
 
 likelihood = gp.log_likelihood(np.array([1, 1, 1]))
 grad_likelihood = gp.log_likelihood_gradient(np.array([0.1, 1, 1]))
@@ -55,4 +55,12 @@ print('Optimized RBF Model: ', theta, op_likelihood)
 
 gp_GPy.optimize()
 print(gp_GPy)
+
+
+sample = bayesian_optimization.choose_sample(bayesian_optimization.upper_confidence_bound,
+                                             gp,
+                                             X.shape[1],
+                                             np.array([[-10, 20], [-10, 20]]))
+
+print(sample)
 

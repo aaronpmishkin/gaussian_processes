@@ -1,0 +1,234 @@
+{
+    "_id": {
+        "$oid": "5977c4ec3081a50e2f5660fb"
+    },
+    "name": "BayesOpt",
+    "description": "",
+    "creator": "amishkin",
+    "rootObjectives": [
+        {
+            "name": "BayesOpt",
+            "description": "",
+            "objectiveType": "abstract",
+            "subObjectives": [
+                {
+                    "name": "ABParent",
+                    "description": "",
+                    "objectiveType": "abstract",
+                    "subObjectives": [
+                        {
+                            "name": "A",
+                            "description": "",
+                            "objectiveType": "primitive",
+                            "id": "A",
+                            "domain": {
+                                "minValue": 0,
+                                "maxValue": 100,
+                                "type": "continuous"
+                            },
+                            "color": "red",
+                            "defaultScoreFunction": {
+                                "immutable": false,
+                                "elementScoreMap": [
+                                    [
+                                        0,
+                                        0.5
+                                    ],
+                                    [
+                                        25,
+                                        0.5
+                                    ],
+                                    [
+                                        50,
+                                        0.5
+                                    ],
+                                    [
+                                        75,
+                                        0.5
+                                    ],
+                                    [
+                                        100,
+                                        0.5
+                                    ]
+                                ],
+                                "type": "continuous",
+                                "minDomainValue": 0,
+                                "maxDomainValue": 100,
+                                "bestElement": 0,
+                                "worstElement": 0
+                            }
+                        },
+                        {
+                            "name": "B",
+                            "description": "",
+                            "objectiveType": "primitive",
+                            "id": "B",
+                            "domain": {
+                                "minValue": 300,
+                                "maxValue": 450,
+                                "type": "continuous"
+                            },
+                            "color": "blue",
+                            "defaultScoreFunction": {
+                                "immutable": false,
+                                "elementScoreMap": [
+                                    [
+                                        300,
+                                        0.5
+                                    ],
+                                    [
+                                        337.5,
+                                        0.5
+                                    ],
+                                    [
+                                        375,
+                                        0.5
+                                    ],
+                                    [
+                                        412.5,
+                                        0.5
+                                    ],
+                                    [
+                                        450,
+                                        0.5
+                                    ]
+                                ],
+                                "type": "continuous",
+                                "minDomainValue": 300,
+                                "maxDomainValue": 450,
+                                "bestElement": 300,
+                                "worstElement": 300
+                            }
+                        }
+                    ],
+                    "id": "ABParent"
+                }
+            ],
+            "id": "BayesOpt"
+        }
+    ],
+    "alternatives": [
+        {
+            "name": "One",
+            "description": "",
+            "objectiveValues": [
+                [
+                    "A",
+                    10
+                ],
+                [
+                    "B",
+                    432
+                ]
+            ],
+            "id": "One"
+        },
+        {
+            "name": "Two",
+            "description": "",
+            "objectiveValues": [
+                [
+                    "A",
+                    60
+                ],
+                [
+                    "B",
+                    411
+                ]
+            ],
+            "id": "Two"
+        }
+    ],
+    "users": [
+        {
+            "color": "#000000",
+            "username": "amishkin",
+            "scoreFunctionMap": {
+                "scoreFunctions": [
+                    [
+                        "A",
+                        {
+                            "immutable": false,
+                            "elementScoreMap": [
+                                [
+                                    0,
+                                    0.5
+                                ],
+                                [
+                                    25,
+                                    0.2476796663724459
+                                ],
+                                [
+                                    50,
+                                    0
+                                ],
+                                [
+                                    75,
+                                    0.5
+                                ],
+                                [
+                                    100,
+                                    1
+                                ]
+                            ],
+                            "type": "continuous",
+                            "minDomainValue": 0,
+                            "maxDomainValue": 100,
+                            "bestElement": 100,
+                            "worstElement": 50
+                        }
+                    ],
+                    [
+                        "B",
+                        {
+                            "immutable": false,
+                            "elementScoreMap": [
+                                [
+                                    300,
+                                    0
+                                ],
+                                [
+                                    337.5,
+                                    0.6471756861760066
+                                ],
+                                [
+                                    375,
+                                    0.9282004869901217
+                                ],
+                                [
+                                    412.5,
+                                    1
+                                ],
+                                [
+                                    450,
+                                    0.6995234562800481
+                                ]
+                            ],
+                            "type": "continuous",
+                            "minDomainValue": 300,
+                            "maxDomainValue": 450,
+                            "bestElement": 412.5,
+                            "worstElement": 300
+                        }
+                    ]
+                ]
+            },
+            "weightMap": {
+                "weights": [
+                    [
+                        "B",
+                        0.6
+                    ],
+                    [
+                        "A",
+                        0.4
+                    ]
+                ],
+                "weightTotal": 1
+            }
+        }
+    ],
+    "fname": "BayesOpt",
+    "password": "bayes",
+    "type": 0
+}

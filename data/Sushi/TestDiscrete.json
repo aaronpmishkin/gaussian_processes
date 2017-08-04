@@ -1,0 +1,226 @@
+{
+    "_id": {
+        "$oid": "5930aba2cf6d265ead1cc71f"
+    },
+    "name": "This Is A Test Chart",
+    "description": "Description",
+    "creator": "amishkin",
+    "rootObjectives": [
+        {
+            "name": "This Is A Test Chart",
+            "description": "",
+            "objectiveType": "abstract",
+            "subObjectives": [
+                {
+                    "name": "A",
+                    "description": "",
+                    "objectiveType": "primitive",
+                    "id": "A",
+                    "domain": {
+                        "type": "continuous",
+                        "minValue": 10,
+                        "maxValue": 100,
+                        "unit": "dollars"
+                    },
+                    "color": "red",
+                    "defaultScoreFunction": {
+                        "immutable": false,
+                        "elementScoreMap": [
+                            [
+                                10,
+                                0.5
+                            ],
+                            [
+                                32.5,
+                                0.5
+                            ],
+                            [
+                                55,
+                                0.5
+                            ],
+                            [
+                                77.5,
+                                0.5
+                            ],
+                            [
+                                100,
+                                0.5
+                            ]
+                        ],
+                        "type": "continuous",
+                        "minDomainValue": 10,
+                        "maxDomainValue": 100,
+                        "bestElement": 10,
+                        "worstElement": 10
+                    }
+                },
+                {
+                    "name": "B",
+                    "description": "",
+                    "objectiveType": "primitive",
+                    "id": "B",
+                    "domain": {
+                        "type": "categorical",
+                        "ordered": true,
+                        "elements": [
+                            "Working",
+                            "Failing",
+                            "Neither"
+                        ]
+                    },
+                    "color": "blue",
+                    "defaultScoreFunction": {
+                        "immutable": false,
+                        "elementScoreMap": [
+                            [
+                                "Working",
+                                0.5
+                            ],
+                            [
+                                "Failing",
+                                0.5
+                            ],
+                            [
+                                "Neither",
+                                0.5
+                            ]
+                        ],
+                        "type": "discrete",
+                        "bestElement": "Working",
+                        "worstElement": "Working"
+                    }
+                }
+            ],
+            "id": "ThisIsATestChart"
+        }
+    ],
+    "alternatives": [
+        {
+            "name": "1",
+            "description": "",
+            "objectiveValues": [
+                [
+                    "A",
+                    10
+                ],
+                [
+                    "B",
+                    "Working"
+                ]
+            ],
+            "id": "1"
+        },
+        {
+            "name": "2",
+            "description": "",
+            "objectiveValues": [
+                [
+                    "A",
+                    50
+                ],
+                [
+                    "B",
+                    "Neither"
+                ]
+            ],
+            "id": "2"
+        },
+        {
+            "name": "3",
+            "description": "",
+            "objectiveValues": [
+                [
+                    "A",
+                    100
+                ],
+                [
+                    "B",
+                    "Failing"
+                ]
+            ],
+            "id": "3"
+        }
+    ],
+    "users": [
+        {
+            "color": "#F3C300",
+            "username": "amishkin",
+            "scoreFunctionMap": {
+                "scoreFunctions": [
+                    [
+                        "A",
+                        {
+                            "immutable": false,
+                            "elementScoreMap": [
+                                [
+                                    10,
+                                    0
+                                ],
+                                [
+                                    32.5,
+                                    0.25
+                                ],
+                                [
+                                    55,
+                                    0.5
+                                ],
+                                [
+                                    77.5,
+                                    0.75
+                                ],
+                                [
+                                    100,
+                                    1
+                                ]
+                            ],
+                            "type": "continuous",
+                            "minDomainValue": 10,
+                            "maxDomainValue": 100,
+                            "bestElement": 100,
+                            "worstElement": 10
+                        }
+                    ],
+                    [
+                        "B",
+                        {
+                            "immutable": false,
+                            "elementScoreMap": [
+                                [
+                                    "Working",
+                                    1
+                                ],
+                                [
+                                    "Failing",
+                                    0
+                                ],
+                                [
+                                    "Neither",
+                                    0.5
+                                ]
+                            ],
+                            "type": "discrete",
+                            "bestElement": "Neither",
+                            "worstElement": "Working"
+                        }
+                    ]
+                ]
+            },
+            "weightMap": {
+                "weights": [
+                    [
+                        "A",
+                        0.3
+                    ],
+                    [
+                        "B",
+                        0.7
+                    ]
+                ],
+                "weightTotal": 1
+            }
+        }
+    ],
+    "fname": "ThisIsATestChart",
+    "password": "temp",
+    "type": 0
+}
