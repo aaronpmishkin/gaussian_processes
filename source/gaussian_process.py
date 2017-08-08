@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 16:07:12
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-04 16:00:52
+# @Last Modified time: 2017-08-08 11:36:47
 
 # Implementation adapted from Gaussian Processes for Machine Learning; Rasmussen and Williams, 2006
 
@@ -46,9 +46,10 @@ class GaussianProcess():
         self.kernel = kernel
         self.mean_function = mean_function
         self.mu = mean_function.f(X)
+        self.Y_cent = self.Y - self.mu
 
         self.theta = np.append([obs_variance], self.kernel.get_parameters())
-        self.K = kernel.cov(X) + (obs_variance * np.identity(X.shape[0]))
+        _, self.K, self.L, self.alpha, _ = self.__covariance_at_theta__(self.theta)
 
     def get_hyperparameters(self):
         """ get_hyperparameters
@@ -81,13 +82,10 @@ class GaussianProcess():
                 Whether or not to include noise estimate in predictions.
         """
         K_star = self.kernel.cov(X_star, self.X)
-        L = cholesky(self.K, lower=True)
 
-        alpha = solve_triangular(L, (self.Y - self.mu), lower=True)
-        alpha = solve_triangular(L.T, alpha, lower=False)
-        f_bar = self.mean_function.f(X_star) + np.dot(K_star, alpha)
+        f_bar = self.mean_function.f(X_star) + np.dot(K_star, self.alpha)
 
-        v = solve_triangular(L, K_star.T, lower=True)
+        v = solve_triangular(self.L, K_star.T, lower=True)
         cov = self.kernel.cov(X_star) - np.dot(v.T, v)
 
         if noise:
@@ -130,24 +128,10 @@ class GaussianProcess():
             theta: array-like, shape = [n_hyperparameters, ]
                 The hyperparameter assignment at which to evaluate the log marginal likelihood.
         """
-        I_matrix = np.identity(self.X.shape[0])
+        theta, K, L, alpha, I_matrix = self.__covariance_at_theta__(theta)
 
-        if theta is None:
-            self.theta
-            K = self.K
-        else:
-            K = self.kernel.cov(self.X, theta=theta[1:]) + (theta[0] * I_matrix)
-
-        Y_cent = self.Y - self.mu
-        L = cholesky(K, lower=True)
-
-        alpha = solve_triangular(L, Y_cent, lower=True)
-        alpha = solve_triangular(L.T, alpha, lower=False)
-
-        fit_term = -0.5 * np.dot(Y_cent.T, alpha)
-
+        fit_term = -0.5 * np.dot(self.Y_cent.T, alpha)
         complexity_term = -np.log(np.diag(L)).sum()
-
         normalizing_term = -0.5 * self.X.shape[0] * np.log(2 * np.pi)
 
         return (fit_term + complexity_term + normalizing_term).sum()
@@ -161,28 +145,55 @@ class GaussianProcess():
             theta: array-like, shape = [n_hyperparameters, ]
                 The hyperparameter assignment at which to evaluate the gradient.
         """
-        if theta is None:
-            theta = self.theta
+        theta, K, L, alpha, I_matrix = self.__covariance_at_theta__(theta)
 
-        I_matrix = np.identity(self.X.shape[0])
         grad = np.copy(theta)
-
-        K = self.kernel.cov(self.X, theta=theta[1:]) + (theta[0] * I_matrix)
-
-        L = cholesky(K, lower=True)
         L_inv = inv(L)
-        alpha = solve_triangular(L, (self.Y - self.mu), lower=True)
-        alpha = solve_triangular(L.T, alpha, lower=False)
         beta = np.dot(alpha, alpha.T) - np.dot(L_inv.T, L_inv)
-
         grad[0] = 0.5 * np.trace(beta)
-
         dK_dtheta = self.kernel.cov_gradient(self.X, theta=theta[1:])
 
         for i, dK_dh in enumerate(dK_dtheta):
             grad[i + 1] = 0.5 * np.trace(np.dot(beta, dK_dh))
 
         return grad
+
+    def __covariance_at_theta__(self, theta):
+        """ __covariance_at_theta__
+        Compute the covariance matrix of X at the hyperparameter assignment given by theta.
+        If theta is None, the current hyperparameter assignment of the GP + kernel is used.
+        Arguments:
+        ---------
+            theta: array-like, shape = [n_hyperparameters, ]
+                The hyperparameter assignment at which to evaluate the covariance matrix.
+        Return Type:
+        ------------
+            theta: array-like, shape = [n_hyperparameters, ]
+                The hyperparameter assignment.
+            K: array-like, shape = [n_samples, n_samples]
+                The covariance matrix of X computed at theta.
+            L: array-like, shape = [n_samples, n_samples]
+                The cholesky (lower triangular) decomposition of K
+            alpha: array-like, shape = [n_samples, ]
+                alpha = inv(K)(Y_cent), the matrix product of the inverse of K
+                and Y_cent, the centered observations.
+            I_matrix: array-like, shape = [n_samples, n_samples]
+                The identity matrix of size n by n.
+        """
+        I_matrix = np.identity(self.X.shape[0])
+
+        if theta is None:
+            theta = self.theta
+            K = self.K
+            L = self.L
+            alpha = self.alpha
+        else:
+            K = self.kernel.cov(self.X, theta=theta[1:]) + (theta[0] * I_matrix)
+            L = cholesky(K, lower=True)
+            alpha = solve_triangular(L, self.Y_cent, lower=True)
+            alpha = solve_triangular(L.T, alpha, lower=False)
+
+        return theta, K, L, alpha, I_matrix
 
     def __objective__(self, theta=None, fixed_params=[]):
         """ __objective__
@@ -237,22 +248,22 @@ class GaussianProcess():
         best_theta = None
         min_objective = np.inf
 
-        ones = np.ones(self.kernel.num_parameters + 1)
-
         if bounds is None:
-            bounds = np.array([(ones * 1e-8), (ones * 10000)])
+            bounds = np.ones((self.kernel.num_parameters + 1, 2))
+            bounds[:, 0] = bounds[:, 0] * 1e-8
+            bounds[:, 1] = bounds[:, 1] * 100
 
         if len(fixed_params) != 0:
-            bounds = np.delete(bounds, fixed_params, axis=1)
+            bounds = np.delete(bounds, fixed_params, axis=0)
 
-        for start in np.random.uniform(bounds[0, :], bounds[1, :],
-                                       size=(n_restarts, bounds.shape[1])):
+        for start in np.random.uniform(bounds[:, 0], bounds[:, 1],
+                                       size=(n_restarts, bounds.shape[0])):
 
             res = minimize(self.__objective__,
                            x0=start,
                            method="L-BFGS-B",
                            jac=self.__objective_grad__,
-                           bounds=list(zip(bounds[0], bounds[1])),
+                           bounds=bounds,
                            args=fixed_params)
 
             if res.fun < min_objective:

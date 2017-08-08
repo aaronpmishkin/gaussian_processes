@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 21:31:56
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-07 20:30:38
+# @Last Modified time: 2017-08-08 10:37:52
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -83,10 +83,22 @@ theta, op_likelihood = gp.optimize()
 gp.set_hyperparameters(theta)
 
 bounds = np.array(bounds)
+
+fixed_features = []
+fixed_values = []
+for i, feature in enumerate(features):
+    if feature['type'] == 'discrete':
+        fixed_features.append(i)
+        fixed_values.append(0)
+
+fixed_features = np.array(fixed_features)
+fixed_values = np.array(fixed_values)
+
 x = bayesian_optimization.choose_sample(bayesian_optimization.upper_confidence_bound,
                                         gp,
-                                        X.shape[1],
                                         bounds,
+                                        fixed_features,
+                                        fixed_values,
                                         10,
                                         True)
 print(x)

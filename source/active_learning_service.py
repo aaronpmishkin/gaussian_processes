@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-08-07 12:34:15
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-07 20:35:08
+# @Last Modified time: 2017-08-08 10:37:59
 
 # Import Libraries
 import numpy as np
@@ -62,7 +62,6 @@ class ActiveLearningService(object):
 
         x_star = bayesian_optimization.choose_sample(bayesian_optimization.upper_confidence_bound,
                                                      gp,
-                                                     n_features=len(features),
                                                      bounds=bounds)
         x_star = bayesian_optimization.choose_categories(
             x_star,
