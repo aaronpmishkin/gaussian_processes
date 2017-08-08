@@ -1,0 +1,4 @@
+WEB_SERVER_ADDRESS: 'localhost:8080'
+rpc_exchange: 'nameko-rpc'
+max_workers: 10
+parent_calls_tracked: 10

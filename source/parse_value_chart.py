@@ -2,22 +2,24 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-11 11:20:08
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-04 23:23:59
+# @Last Modified time: 2017-08-07 19:35:50
 
 import numpy as np
 import json
 
 
 def parse_valuechart(value_chart_json):
-    value_chart = json.loads(value_chart_json)
+    if type(value_chart_json) == str:
+        value_chart = json.loads(value_chart_json)
+    else:
+        value_chart = value_chart_json
 
     primitive_objectives = flatten_objectives(value_chart['rootObjectives'])
-    features, objective_map = parse_objectives(primitive_objectives)
+    features, objective_map, bounds = parse_objectives(primitive_objectives)
     alternatives = parse_alternatives(value_chart['alternatives'], features, objective_map)
     utility_functions = build_utility_functions(value_chart['users'][0], features, objective_map)
-    constraints = build_constraints(primitive_objectives, len(features))
 
-    return features, objective_map, alternatives, utility_functions, constraints
+    return value_chart, features, objective_map, bounds, alternatives, utility_functions
 
 
 def flatten_objectives(objectives):
@@ -35,6 +37,7 @@ def flatten_objectives(objectives):
 
 def parse_objectives(primitive_objectives):
     features = []
+    bounds = []
     objective_map = {}
     feature_index = 0
 
@@ -49,6 +52,7 @@ def parse_objectives(primitive_objectives):
             objective_map[objective['name']] = feature
 
             features.append(feature)
+            bounds.append(feature['bounds'])
             feature_index += 1
         else:
             elements = {}
@@ -60,12 +64,13 @@ def parse_objectives(primitive_objectives):
                 feature['index'] = feature_index
 
                 features.append(feature)
+                bounds.append(feature['bounds'])
                 elements[element] = feature
                 feature_index += 1
 
             objective_map[objective['name']] = {'elements': elements, 'type': 'discrete'}
 
-    return features, objective_map
+    return features, objective_map, bounds
 
 
 def parse_alternatives(alternatives, features, objective_map):
@@ -238,7 +243,15 @@ def parse_domain_constraints(domain, num_features, i):
                 'jac': build_categorical_jac(num_features, i, j, elements)
             })
 
+        constraints.append({
+            'type': 'eq',
+            'fun': build_categorical_fun(num_features, i, j + 1, elements),
+            'jac': build_categorical_jac(num_features, i, j + 1, elements)
+        })
+
         i += len(elements)
+
+
 
     return constraints, i
 

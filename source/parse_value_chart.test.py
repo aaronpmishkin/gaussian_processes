@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-21 13:24:13
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-04 23:16:45
+# @Last Modified time: 2017-08-07 19:36:41
 
 
 import numpy as np
@@ -75,7 +75,7 @@ class test_parse_value_chart(unittest.TestCase):
 
     def test_build_utility_functions(self):
         primitive_objectives = parse_value_chart.flatten_objectives(self.valueChart['rootObjectives'])
-        features, objective_map = parse_value_chart.parse_objectives(primitive_objectives)
+        features, objective_map, bounds = parse_value_chart.parse_objectives(primitive_objectives)
 
         utility_functions = parse_value_chart.build_utility_functions(self.valueChart['users'][0],
                                                                     features, objective_map)
@@ -90,13 +90,14 @@ class test_parse_value_chart(unittest.TestCase):
         self.assertEqual(y, 6)
 
     def test_parse_valuechart(self):
-        (features,
+        (valuechart,
+         features,
          objective_map,
+         bounds,
          alternatives,
-         utility_functions,
-         constraints) = parse_value_chart.parse_valuechart(self.data)
+         utility_functions) = parse_value_chart.parse_valuechart(self.data)
 
-        self.assertEqual(len(constraints), 12)
+        self.assertEqual(len(bounds), 9)
         self.assertEqual(len(features), 9)
         self.assertEqual(alternatives.shape, (6, len(features)))
 

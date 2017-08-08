@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 21:42:40
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-04 16:15:39
+# @Last Modified time: 2017-08-07 15:14:12
 
 
 import numpy as np
@@ -40,8 +40,8 @@ class Zero():
         return np.zeros((x.shape[0]))
 
 
-class Additive():
-    """ Zero
+class AdditiveMean():
+    """ AdditiveMean
     An additive mean function where each feature has its own (independent) mean function.
     ----------
         dim: integer
@@ -51,7 +51,7 @@ class Additive():
     """
 
     def __init__(self, dim, mean_functions):
-        self.dim
+        self.dim = dim
         self.mean_functions = mean_functions
 
     def f(self, X):

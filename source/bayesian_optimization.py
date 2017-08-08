@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-10 14:41:16
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-04 16:39:40
+# @Last Modified time: 2017-08-07 20:28:54
 
 import numpy as np
 from scipy.optimize import minimize
@@ -38,7 +38,7 @@ def upper_confidence_bound(x, gp, quantiles=(0.025, 0.975), maximization=True):
     return scaling_factor * ucb
 
 
-def choose_sample(acquisition_function, gp, n_features, bounds, constraints=[], n_restarts=10, maximization=True):
+def choose_sample(acquisition_function, gp, n_features, bounds, n_restarts=10, maximization=True):
     """ choose_sample
     Choose the next point to sample based on the provided acquisition_function
     gp model, and constraints.
@@ -62,18 +62,47 @@ def choose_sample(acquisition_function, gp, n_features, bounds, constraints=[], 
     """
 
     best_x = None
-    best_acquisition_value = 1
+    best_acquisition_value = np.Infinity
 
     for start in np.random.uniform(bounds[:, 0], bounds[:, 1], size=(n_restarts, n_features)):
 
         res = minimize(acquisition_function,
                        x0=start,
-                       constraints=constraints,
+                       bounds=bounds,
                        method="SLSQP",
-                       args=(gp, (0.025, 0.975), maximization))
+                       args=(gp))
 
-        if res.fun < best_acquisition_value:
+        if res.fun < best_acquisition_value and res.success:
             best_acquisition_value = res.fun
             best_x = res.x
 
     return np.array([best_x])
+
+
+def choose_category(x, acquisition_function, gp, features):
+    for key, feature in features.items():
+        x[feature['index']] = 0
+
+    best_acquisition_value = np.Infinity
+
+    for key, feature in features.items():
+        x_hat = np.copy(x)
+        x_hat[feature['index']] = 1
+        acq_value = acquisition_function(x_hat, gp)
+
+        if acq_value < best_acquisition_value:
+            best_x = x_hat
+            best_acquisition_value = acq_value
+
+    return best_x
+
+
+def choose_categories(x, acquisition_function, gp, objective_map):
+    x = x[0]
+    for key, objective in objective_map.items():
+        if objective['type'] == 'discrete':
+            x = choose_category(x, acquisition_function, gp, objective['elements'])
+
+    return np.array([x])
+
+
