@@ -2,7 +2,9 @@
 # @Author: aaronpmishkin
 # @Date:   2017-08-04 22:36:14
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-04 23:25:29
+# @Last Modified time: 2017-08-08 15:14:28
+
+import numpy as np
 
 
 def parse_feature_vectors(X, features):
@@ -33,8 +35,9 @@ def parse_feature_vector(x, features):
             The array of feature objects that map features to ValueChart Objectives.
     """
 
+    name = str(int(np.random.rand(1)[0] * 1000))
     # How do i decide on these? Random generation?
-    alternative = {'name': 'temp', 'id': 'temp'}
+    alternative = {'name': ('sample-' + name), 'id': ('temp-' + name), 'description': 'none'}
     objectiveValues = []
 
     for i, feature in enumerate(features):
