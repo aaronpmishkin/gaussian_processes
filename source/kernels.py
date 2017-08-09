@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 21:07:21
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-08 19:51:21
+# @Last Modified time: 2017-08-08 20:17:01
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -106,6 +106,8 @@ class Additive():
             The dimensionality of inputs to the kernel (i.e. dimension of X).
         order: number, order <= dim
             The order of the additive kernel.
+        base_kernels: array-like, shape = [dim, ]
+            The set of base kernel functions, one for each dimension.
         var: array-like, shape = [order, ]
             An array of variance magnitudes, one for each order d: 1 <= d <= D
     """

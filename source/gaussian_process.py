@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 16:07:12
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-08 19:31:21
+# @Last Modified time: 2017-08-08 22:06:16
 
 # Implementation adapted from Gaussian Processes for Machine Learning; Rasmussen and Williams, 2006
 
@@ -274,7 +274,7 @@ class GaussianProcess():
 
         return best_theta, -1 * min_objective
 
-    def plot(self, show_data=True):
+    def plot(self, show_data=True, bounds=None, fig=None):
         """ plot
         Plot the GP model's mean function and variance.
         Arguments:
@@ -284,21 +284,23 @@ class GaussianProcess():
         """
         if self.X.shape[1] != 1:
             raise ValueError('Cannot plot with multi-dimensional inputs')
+        if bounds is None:
+            minVal = np.min(self.X)
+            maxVal = np.max(self.X)
+            delta = (maxVal - minVal) * self.__plot_delta__
+            bounds = [np.floor(minVal - delta), np.ceil(maxVal + delta)]
 
-        minVal = np.min(self.X)
-        maxVal = np.max(self.X)
-        delta = (maxVal - minVal) * self.__plot_delta__
-
-        mean_x = np.linspace(np.floor(minVal - delta),
-                             np.ceil(maxVal + delta),
+        mean_x = np.linspace(bounds[0],
+                             bounds[1],
                              self.__plot_density__).reshape(self.__plot_density__, self.kernel.dim)
 
         mean_y, cov = self.predict(mean_x)
         lq, uq = self.predict_quantiles(mean_x, noise=True)
 
         mean_x = mean_x.reshape(self.__plot_density__)
+        if fig is None:
+            fig = plt.figure()
 
-        fig = plt.figure()
         plt.plot(mean_x, mean_y, 'k', label='Predicted Mean')
 
         if show_data:
@@ -307,7 +309,7 @@ class GaussianProcess():
         plt.fill_between(mean_x, lq.reshape(lq.shape[0],),
                          uq.reshape(lq.shape[0],),
                          color='#B7E9F9', label='Confidence Bound')
-
+        plt.ylim(bounds)
         plt.legend()
 
         return fig
