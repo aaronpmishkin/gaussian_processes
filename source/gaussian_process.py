@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 16:07:12
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-08 11:36:47
+# @Last Modified time: 2017-08-08 19:31:21
 
 # Implementation adapted from Gaussian Processes for Machine Learning; Rasmussen and Williams, 2006
 
@@ -69,7 +69,7 @@ class GaussianProcess():
         """
         self.theta = theta
         self.kernel.set_parameters(theta[1:])
-        self.K = self.kernel.cov(self.X) + (theta[0] * np.identity(self.X.shape[0]))
+        _, self.K, self.L, self.alpha, _ = self.__covariance_at_theta__(theta)
 
     def predict(self, X_star, noise=True):
         """ predict
@@ -250,8 +250,8 @@ class GaussianProcess():
 
         if bounds is None:
             bounds = np.ones((self.kernel.num_parameters + 1, 2))
-            bounds[:, 0] = bounds[:, 0] * 1e-8
-            bounds[:, 1] = bounds[:, 1] * 100
+            bounds[:, 0] = bounds[:, 0] * 0.01
+            bounds[:, 1] = bounds[:, 1] * 1000
 
         if len(fixed_params) != 0:
             bounds = np.delete(bounds, fixed_params, axis=0)

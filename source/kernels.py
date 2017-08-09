@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 21:07:21
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-04 15:46:11
+# @Last Modified time: 2017-08-08 19:51:21
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -90,7 +90,7 @@ class RBF():
 
         K = np.exp(dist / (-2 * (theta[0] ** 2)))
 
-        dK_dl = theta[1] * (theta[0] ** -5) * dist * K
+        dK_dl = theta[1] * (theta[0] ** -3) * dist * K
 
         dK_dvar = K
 
