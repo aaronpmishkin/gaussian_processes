@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-08-04 22:36:14
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-08 15:14:28
+# @Last Modified time: 2017-08-09 14:42:34
 
 import numpy as np
 
@@ -42,7 +42,8 @@ def parse_feature_vector(x, features):
 
     for i, feature in enumerate(features):
         if feature['type'] == 'continuous':
-            objectiveValues.append([feature['objective_name'], x[i]])
+            val = (x[i] * (feature['bounds'][1] - feature['bounds'][0])) + feature['bounds'][0]
+            objectiveValues.append([feature['objective_name'], val])
         elif x[i] == 1:
             objectiveValues.append([feature['objective_name'], feature['element']])
 

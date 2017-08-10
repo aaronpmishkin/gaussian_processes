@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 21:07:21
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-08 20:17:01
+# @Last Modified time: 2017-08-09 13:09:35
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -58,6 +58,8 @@ class RBF():
             theta (optional): array-like, shape = [2, ]
                 An array of parameter values for the kernel.
         """
+
+        # print(X, Y)
         if Y is None:
             Y = X
 
@@ -68,6 +70,8 @@ class RBF():
         dist = cdist(X, Y, 'sqeuclidean')
 
         K = theta[1] * np.exp(dist / (-2 * (theta[0] ** 2)))
+
+        # print(K.shape)
 
         return K
 
@@ -179,6 +183,7 @@ class Additive():
                 Exactly one base_kernel must be provided per input feature.
                 If None, the current base_kernels of the kernel are used.
         """
+
         if Y is None:
             Y = X
 

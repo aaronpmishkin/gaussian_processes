@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-11 11:20:08
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-07 19:35:50
+# @Last Modified time: 2017-08-09 21:41:31
 
 import numpy as np
 import json
@@ -90,7 +90,9 @@ def parse_alternative(alternative, features, objective_map):
         feature = objective_map[outcome[0]]
 
         if feature['type'] == 'continuous':
-            x[feature['index']] = outcome[1]
+            outcome[1] = float(outcome[1])
+            val = (outcome[1] - feature['bounds'][0]) / (feature['bounds'][1] - feature['bounds'][0])
+            x[feature['index']] = val
         else:
             for key in feature['elements']:
                 element = feature['elements'][key]
@@ -129,6 +131,7 @@ def build_utility_functions(user, features, objective_map):
 def build_continuous_utility(score_function, weight, features, continuous_feature):
     index = continuous_feature['index']
     scores = np.array(score_function['elementScoreMap'])
+    scores[:, 0] = (scores[:, 0] - continuous_feature['bounds'][0]) / (continuous_feature['bounds'][1] - continuous_feature['bounds'][0])
 
     def f(x):
         start = scores[scores[:, 0] <= x[index]]

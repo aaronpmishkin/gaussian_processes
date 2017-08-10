@@ -1,0 +1,109 @@
+{
+    "_id": {
+        "$oid": "598b34a262d2355d2625d136"
+    },
+    "name": "Demonstration",
+    "description": "",
+    "creator": "amishkin",
+    "rootObjectives": [
+        {
+            "name": "Demonstration",
+            "description": "",
+            "objectiveType": "abstract",
+            "subObjectives": [
+                {
+                    "name": "Feature",
+                    "description": "",
+                    "objectiveType": "primitive",
+                    "id": "Feature",
+                    "domain": {
+                        "minValue": 0,
+                        "maxValue": 100,
+                        "type": "continuous"
+                    },
+                    "color": "red"
+                }
+            ],
+            "id": "Demonstration"
+        }
+    ],
+    "alternatives": [
+        {
+            "name": "A",
+            "description": "",
+            "objectiveValues": [
+                [
+                    "Feature",
+                    25
+                ]
+            ],
+            "id": "A"
+        },
+        {
+            "name": "B",
+            "description": "",
+            "objectiveValues": [
+                [
+                    "Feature",
+                    60
+                ]
+            ],
+            "id": "B"
+        }
+    ],
+    "users": [
+        {
+            "color": "#F3C300",
+            "username": "amishkin",
+            "scoreFunctionMap": {
+                "scoreFunctions": [
+                    [
+                        "Feature",
+                        {
+                            "immutable": false,
+                            "elementScoreMap": [
+                                [
+                                    0,
+                                    0
+                                ],
+                                [
+                                    25,
+                                    0.24140710264285387
+                                ],
+                                [
+                                    50,
+                                    0.46879754381595234
+                                ],
+                                [
+                                    75,
+                                    0.7348927084723431
+                                ],
+                                [
+                                    100,
+                                    1
+                                ]
+                            ],
+                            "type": "continuous",
+                            "minDomainValue": 0,
+                            "maxDomainValue": 100,
+                            "bestElement": 100,
+                            "worstElement": 0
+                        }
+                    ]
+                ]
+            },
+            "weightMap": {
+                "weights": [
+                    [
+                        "Feature",
+                        1
+                    ]
+                ],
+                "weightTotal": 1
+            }
+        }
+    ],
+    "fname": "Demonstration",
+    "password": "temp",
+    "type": 0
+}

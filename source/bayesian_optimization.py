@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-10 14:41:16
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-08 11:10:31
+# @Last Modified time: 2017-08-09 20:34:27
 
 import numpy as np
 from scipy.optimize import minimize

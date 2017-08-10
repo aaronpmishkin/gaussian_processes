@@ -2,7 +2,7 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 16:07:12
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-08 22:06:16
+# @Last Modified time: 2017-08-09 21:15:26
 
 # Implementation adapted from Gaussian Processes for Machine Learning; Rasmussen and Williams, 2006
 
@@ -59,7 +59,7 @@ class GaussianProcess():
         return self.theta
 
     def set_hyperparameters(self, theta):
-        """ get_hyperparameters
+        """ set_hyperparameters
         Set the hyperparameters of the Gaussian process model.
         Includes the arameters of the kernel function.
         Arguments:
@@ -106,6 +106,7 @@ class GaussianProcess():
                 The lower and upper quantiles that define the desired confidence bounds.
         """
         f_bar, cov = self.predict(X_star, noise)
+
         sd = np.sqrt(np.diag(cov))
         upper_quantiles = np.copy(f_bar)
         lower_quantiles = np.copy(f_bar)
@@ -209,7 +210,10 @@ class GaussianProcess():
                 The indices of the hyperparameters in the hyperparameter array (theta)
                 to consider fixed during optimization.
         """
-        theta = np.insert(theta, fixed_params, self.theta[fixed_params])
+        if len(fixed_params) != 0:
+            for i, j in enumerate(fixed_params):
+                theta = np.insert(theta, j, self.theta[i])
+
         return -1 * self.log_likelihood(theta)
 
     def __objective_grad__(self, theta=None, fixed_params=[]):
@@ -226,7 +230,10 @@ class GaussianProcess():
                 The indices of the hyperparameters in the hyperparameter array (theta)
                 to consider fixed during optimization.
         """
-        theta = np.insert(theta, fixed_params, self.theta[fixed_params])
+        if len(fixed_params) != 0:
+            for i, j in enumerate(fixed_params):
+                theta = np.insert(theta, j, self.theta[i])
+
         grad = -1 * self.log_likelihood_gradient(theta)
 
         return np.delete(grad, fixed_params)
@@ -261,20 +268,23 @@ class GaussianProcess():
 
             res = minimize(self.__objective__,
                            x0=start,
-                           method="L-BFGS-B",
+                           method="TNC",
                            jac=self.__objective_grad__,
                            bounds=bounds,
+                           options={"disp": True},
                            args=fixed_params)
 
             if res.fun < min_objective:
                 min_objective = res.fun
                 best_theta = res.x
 
-        best_theta = np.insert(best_theta, fixed_params, self.theta[fixed_params])
+        if len(fixed_params) != 0:
+            for i, j in enumerate(fixed_params):
+                best_theta = np.insert(best_theta, j, self.theta[i])
 
         return best_theta, -1 * min_objective
 
-    def plot(self, show_data=True, bounds=None, fig=None):
+    def plot(self, show_data=True, bounds=None, fig=None, legend=True):
         """ plot
         Plot the GP model's mean function and variance.
         Arguments:
@@ -309,8 +319,9 @@ class GaussianProcess():
         plt.fill_between(mean_x, lq.reshape(lq.shape[0],),
                          uq.reshape(lq.shape[0],),
                          color='#B7E9F9', label='Confidence Bound')
-        plt.ylim(bounds)
-        plt.legend()
+        plt.xlim(bounds)
+        if legend:
+            plt.legend()
 
         return fig
 

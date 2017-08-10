@@ -2,63 +2,75 @@
 # @Author: aaronpmishkin
 # @Date:   2017-07-28 21:31:56
 # @Last Modified by:   aaronpmishkin
-# @Last Modified time: 2017-08-08 22:24:07
+# @Last Modified time: 2017-08-09 21:28:52
 
 import numpy as np
 # from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import gaussian_process
 import kernels
+import mean_functions
 import bayesian_optimization
+from parse_value_chart import parse_valuechart
 
-X = np.random.uniform(low=-3, high=3, size=(2, 1))
+# Open and parse the ValueChart:
+with open('../data/ValueCharts/Demonstration.json', 'r') as TestChart:
+            value_chart = TestChart.read().replace('\n', '')
 
-Y = np.sin(X) + np.random.normal(loc=0, scale=0.2, size=(2, 1))
+(value_chart,
+ features,
+ objective_map,
+ bounds,
+ X,
+ utility_functions) = parse_valuechart(value_chart)
 
-print(X, Y)
+bounds = np.array(bounds)
+bounds[:, 0] = 0
+bounds[:, 1] = 1
 
-rbf_kernel = kernels.RBF(dim=1, length_scale=2., var=1.)
-gp = gaussian_process.GaussianProcess(X, Y, rbf_kernel)
+# These are pulled from the ValueChart prior.
+Y = np.array([[-0.1], [1.2]])
 
+# Create the GP model:
+rbf_kernel = kernels.RBF(dim=1, length_scale=1., var=1.)
+additive_mean = mean_functions.AdditiveMean(dim=1, mean_functions=utility_functions)
+gp = gaussian_process.GaussianProcess(X, Y, rbf_kernel, mean_function=additive_mean, obs_variance=0.005)
 
-likelihood = gp.log_likelihood()
-grad_likelihood = gp.log_likelihood_gradient()
-# print('My Likelihood: ', likelihood, grad_likelihood)
+# Set the bounds for the hyperparameter optimization
+opt_bounds = np.array([[1e-8, 1000], [1e-8, 1000], [1e-8, 1000]])
 
-bounds = np.array([[0.001, 10], [0.001, 10], [0.001, 10]])
-
-# theta, op_likelihood = gp.optimize(bounds=bounds, n_restarts=20)
-theta = np.array([0.002, 1.1, 0.3])
+# Optimize the model and set the new hyperparameters:
+theta, likelihood = gp.optimize(bounds=opt_bounds, fixed_params=[0])
+print(theta, likelihood)
 gp.set_hyperparameters(theta)
-# print('Optimized RBF Model: ', theta, op_likelihood)
 
-gp.plot(bounds=[-3, 3])
+# Plot the GP before sampling:
+gp.plot(legend=False)
+plt.savefig(filename=("../figs/VC_init"))
 
-sin_x = np.linspace(-3, 3, 100)
-sin_y = np.sin(sin_x)
 
-plt.plot(sin_x, sin_y, 'g', label='Ground Truth')
-plt.legend()
+x_next = bayesian_optimization.choose_sample(bayesian_optimization.upper_confidence_bound,
+                                             gp,
+                                             bounds=bounds)
+print(x_next)
 
-plt.savefig(filename=("../figs/initial_samples"))
+lengths = np.linspace(1e-8, 1, 500)
+likelihoods = []
 
-for i in range(5):
-    x_next = bayesian_optimization.choose_sample(bayesian_optimization.upper_confidence_bound,
-                                                 gp,
-                                                 bounds=np.array([[-3, 3]]))
-    y_next = np.sin(x_next) + np.random.normal(loc=0, scale=0.1, size=(1,))
 
-    print(x_next, y_next)
-    X = np.append(X, x_next, axis=0)
-    Y = np.append(Y, y_next, axis=0)
+for length in lengths:
+    likelihoods.append(gp.log_likelihood(np.array([0.05, length, 0.26])))
 
-    gp = gaussian_process.GaussianProcess(X, Y, rbf_kernel)
-    gp.set_hyperparameters(theta)
+plt.figure()
+plt.plot(lengths, likelihoods)
+plt.savefig('../figs/likelihood_plot')
 
-    gp.plot(bounds=[-3, 3])
-    plt.plot(sin_x, sin_y, 'g', label='Ground Truth')
-    plt.legend()
 
-    plt.savefig(filename=("../figs/sample_" + str(i)))
+
 
 plt.show(block=True)
+
+
+
+
+
